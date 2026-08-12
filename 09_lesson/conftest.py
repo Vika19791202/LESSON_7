@@ -1,28 +1,13 @@
-from dotenv import load_dotenv
-import os
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-
-load_dotenv()
-
-DATABASE_URL = (
-    f"postgresql://"
-    f"{os.getenv('DB_USER', 'postgres')}:"
-    f"{os.getenv('DB_PASSWORD', 'secret')}@"
-    f"{os.getenv('DB_HOST', 'localhost')}:"
-    f"{os.getenv('DB_PORT', '5432')}/"
-    f"{os.getenv('DB_NAME', 'test_db')}"
-)
-
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+import pytest
+from database import SessionLocal, init_db
+from models import Student
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@pytest.fixture(scope="session")
+def db():
+    init_db()
+    session = SessionLocal()
+    session.query(Student).delete()
+    session.commit()
+    yield session
+    session.close()
